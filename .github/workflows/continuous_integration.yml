@@ -1,0 +1,29 @@
+name: Continuous integration
+
+on:
+  push:
+  pull_request:
+  schedule:
+  - cron: '0 0 * * 0'
+
+jobs:
+  nox:
+    name: Nox
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nox_session:
+        - black
+        - isort
+        - flake8
+        - mypy
+        - pytest
+        - safety
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - run: pip install poetry nox safety
+    - run: poetry install
+    - run: nox -s ${{ matrix.nox_session }}
