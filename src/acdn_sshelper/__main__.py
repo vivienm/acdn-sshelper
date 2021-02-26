@@ -170,7 +170,7 @@ async def cli(
     tld_format,
     ssh_config_template,
     ssh_config,
-):
+) -> None:
     """Generate SSH certificate and config for cloud instances."""
     logging.basicConfig(
         format="%(asctime)s [%(levelname)s] %(message)s",
@@ -192,8 +192,7 @@ async def cli(
     )
 
 
-def main():
-    """Entry point."""
+def main() -> None:
     cli(auto_envvar_prefix=ENV_PREFIX)
 
 
