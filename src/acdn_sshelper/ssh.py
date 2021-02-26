@@ -66,7 +66,6 @@ class SSHConfigDumper:
 
     def _iter_instances_aliases(
         self,
-        project: Project,
         instances: Collection[Instance],
     ) -> Iterator[Tuple[Instance, List[str]]]:
         alias_map = defaultdict(list)  # Map alias candidates to instances.
@@ -141,10 +140,7 @@ class SSHConfigDumper:
         for project, instances in projects:
             aliases = {
                 instance: aliases
-                for instance, aliases in self._iter_instances_aliases(
-                    project,
-                    instances,
-                )
+                for instance, aliases in self._iter_instances_aliases(instances)
             }
             jumphosts = get_jumphosts(project, instances)
             template_vars["projects"].append(
