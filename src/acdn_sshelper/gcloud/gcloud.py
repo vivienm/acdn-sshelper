@@ -83,4 +83,5 @@ class GCloud:
                 ),
             )
             for instance_data in json.loads(proc.stdout)
+            if "networkInterfaces" in instance_data
         ]
