@@ -85,7 +85,7 @@ async def run_once(
     private_key: Path,
     public_key: Path,
     signed_cert: Path,
-):
+) -> None:
     await asyncio.gather(
         create_signed_cert(
             public_key=public_key,
