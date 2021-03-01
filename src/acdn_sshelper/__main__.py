@@ -1,9 +1,11 @@
 import asyncio
 import logging
 import os
+import time
+from datetime import timedelta
 from functools import wraps
 from pathlib import Path
-from typing import TextIO
+from typing import Optional, TextIO
 
 import click
 import jinja2
@@ -101,6 +103,34 @@ async def run_once(
     )
 
 
+async def run(
+    tld_format: str,
+    ssh_config_template: jinja2.Template,
+    ssh_config: TextIO,
+    private_key: Path,
+    public_key: Path,
+    signed_cert: Path,
+    every: Optional[timedelta],
+) -> None:
+    while True:
+        start = time.perf_counter()
+        await run_once(
+            tld_format=tld_format,
+            ssh_config_template=ssh_config_template,
+            ssh_config=ssh_config,
+            private_key=private_key,
+            public_key=public_key,
+            signed_cert=signed_cert,
+        )
+        elapsed = time.perf_counter() - start
+        if every is None:
+            break
+        else:
+            sleep_delay = every.total_seconds() - elapsed
+            logger.info("Next run in %0.2f sec", sleep_delay)
+            await asyncio.sleep(sleep_delay)
+
+
 @click.command(context_settings={"help_option_names": ["-h", "--help"]})
 @click.option(
     "-i",
@@ -161,6 +191,19 @@ async def run_once(
     metavar="SSH_CONFIG",
     show_envvar=True,
 )
+@click.option(
+    "--loop/--once",
+    help="Periodically regenerate SSH certificate and config.",
+)
+@click.option(
+    "--loop-delay",
+    show_default=True,
+    type=click.INT,
+    help="Duration in seconds between consecutive runs.",
+    default=300,
+    metavar="LOOP_DELAY",
+    show_envvar=True,
+)
 @click.version_option(__version__)
 @click_async
 async def cli(
@@ -170,6 +213,8 @@ async def cli(
     tld_format,
     ssh_config_template,
     ssh_config,
+    loop,
+    loop_delay,
 ) -> None:
     """Generate SSH certificate and config for cloud instances."""
     logging.basicConfig(
@@ -182,13 +227,14 @@ async def cli(
     public_key = private_key.with_suffix(".pub")
     signed_cert = Path(cert_file).expanduser()
     ssh_config_template = jinja2.Template(ssh_config_template.read())
-    await run_once(
+    await run(
         tld_format=tld_format,
         ssh_config_template=ssh_config_template,
         ssh_config=ssh_config,
         private_key=private_key,
         public_key=public_key,
         signed_cert=signed_cert,
+        every=timedelta(seconds=loop_delay) if loop else None,
     )
 
 
